@@ -1,32 +1,71 @@
 # Meta Ads + Claude Code Starter
 
-> Boilerplate testado pra passar pelo Meta App Review na primeira tentativa e ganhar **Standard Access** (9.000 chamadas/h em vez de 60).
+> Quer falar com o Claude sobre suas campanhas do Facebook/Instagram em linguagem natural? Tipo "pausa essa campanha que tá queimando dinheiro" ou "quanto gastei essa semana?". Este repo te dá o caminho completo.
 
 [![v1.0.1](https://img.shields.io/badge/version-1.0.1-blue)](https://github.com/thaleslaray/meta-ads-claude-starter/releases)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](./LICENSE)
 
 ---
 
-## 💡 Importante: você JÁ pode usar com 60 pts/h
+## 📖 Primeiro: do que estamos falando?
 
-Antes de qualquer coisa: **o tier gratuito (60 chamadas/hora) NÃO é inútil**. Ele dá pra:
+Se você nunca mexeu com automação de Meta Ads, leia esta seção primeiro. Vou explicar do absoluto zero, sem jargão.
 
-- ~20 leituras de dados por hora (ver campanhas, insights, performance)
-- ~6 escritas por hora (pausar, ativar, mudar budget)
-- Tudo que um humano faria manualmente em ~30 minutos de operação
+### O que é "Meta Ads via API"
 
-**Quando você precisa do Standard Access:** quando vai automatizar (rodar coisas em loop) ou quando quer fazer análises pesadas em volume.
+Quando você quer mexer nas suas campanhas do Facebook/Instagram, você normalmente:
 
-### A "barra de quota" que aparece
+1. Abre o **Meta Ads Manager** (https://business.facebook.com)
+2. Clica nos botões pra ver campanhas, mudar budget, pausar, etc.
 
-Quando você usa o Claude Code com este repo, a skill `meta-ads-compliance` carrega automaticamente e **monitora a quota em tempo real**. Se você se aproxima do limite, Claude **avisa**:
+Mas você também pode mexer **sem clicar em nada** — usando uma "porta dos fundos" chamada **Marketing API**. Essa API permite que **um programa** (no nosso caso, o Claude) faça as mesmas ações: ver campanhas, pausar, mudar budget, criar anúncios.
+
+**Por que isso é útil?**
+
+Em vez de você abrir o Ads Manager e fazer 10 cliques, você pode falar:
+
+> "Claude, pausa todas as campanhas com CPA acima de R$ 50"
+
+E ele faz. Em 5 segundos. Sem você precisar clicar em nada.
+
+### Por que existe um "limite" (e por que esse repo existe)
+
+A Meta deixa qualquer um usar a Marketing API, **mas com limite**. Eles chamam esse limite de **pontos por hora**. Funciona assim:
+
+- Cada **leitura** (tipo "ver lista de campanhas") custa **1 ponto**
+- Cada **escrita** (tipo "pausa essa campanha") custa **3 pontos**
+
+Quando você cria seu app na Meta, ele começa num tier chamado **Development Access** com **60 pontos por hora** — ou seja, dá pra fazer ~20 leituras OU ~6 escritas por hora antes do limite estourar.
+
+**Pra ganhar mais quota** (9.000 pontos/h, chamado **Standard Access**), você precisa passar pelo **Meta App Review** — o time da Meta avalia seu app, vê se tá tudo certo, e libera. Esse processo costuma rejeitar 90% dos apps na primeira tentativa.
+
+**Este repo é o caminho mais curto pra passar de 60 → 9.000 pts/h.** Aprovação testada em **2 horas** na primeira tentativa.
+
+### Mas você pode usar HOJE com 60 pts/h?
+
+**Pode.** 60 pontos/hora dá pra fazer:
+- ~20 leituras de dados por hora ("quanto gastei?", "qual campanha tá pior?", "mostra meu CTR")
+- ~6 escritas por hora (pausar/ativar/mudar budget de uma campanha por vez)
+
+Isso cobre o uso de uma pessoa **fazendo 1-2 mexidas por hora**. Só não cobre **automação em volume** (rodar coisas em loop) ou **análises pesadas**.
+
+**O que muda quando você passa pra Standard Access (9.000 pts/h):**
+- Pode automatizar de verdade (rodar regras, alertas, relatórios diários)
+- Pode fazer análises pesadas em segundos
+- Pode ter o Claude rodando 24/7 monitorando suas contas
+
+---
+
+## 💡 A "barra de quota" automática
+
+Quando você usa o Claude com este repo, ele **monitora sua quota em tempo real**. Se você tá perto do limite, Claude **avisa**:
 
 ```
 ⚠️ Quota Meta API: 38/60 pts usados nesta hora (63%)
    Recomendo pausar polling até reset (~22min).
 ```
 
-E se você tentar fazer algo que vai estourar:
+E se você tentar fazer algo que vai estourar o limite, Claude **bloqueia**:
 
 ```
 ⛔ Operação bloqueada: faria você passar de 60 pts/h.
@@ -34,23 +73,23 @@ E se você tentar fazer algo que vai estourar:
    pra ganhar Standard Access (9.000 pts/h, 150x mais).
 ```
 
-Ou seja: **você pode começar a usar HOJE mesmo com 60 pts/h**, e só decide submeter App Review quando a quota começa a apertar de verdade.
+Ou seja: você não corre risco de quebrar nada. Pode começar HOJE mesmo com 60 pts/h e só decide submeter App Review quando começar a apertar de verdade.
 
 ---
 
-## ⚠️ ANTES DE COMEÇAR: você precisa MESMO disso?
+## ⚠️ Antes de continuar: você precisa MESMO de App Review?
 
-**90% das pessoas que pensam que precisam deste repo, na verdade não precisam.** Vamos descobrir se você é dos 10%.
+Lembra que App Review serve pra ganhar **Standard Access (9.000 pts/h)**? Pois é. Se você só quer **ler** dados (não escrever), tem um atalho **bem mais fácil** que evita App Review completamente.
 
-### Pergunta única: você quer LER ou ESCREVER?
+### A pergunta-chave: você quer LER ou ESCREVER?
 
 | O que você quer fazer | Exemplos | Solução |
 |----------------------|----------|---------|
-| **Só LER** dados das suas campanhas | "Quanto gastei essa semana?", "Qual campanha tem o melhor ROAS?", "Mostra meu CTR comparado com o mês passado" | 🟢 **Use Windsor.ai** (5min, sem App Review) — [pula pra explicação ↓](#-caso-1--você-só-quer-ler-dados) |
-| **ESCREVER** mudanças nas campanhas | "Pausa essa campanha", "Aumenta o budget pra R$ 500", "Cria uma campanha nova" | 🔴 **Use este repo** (precisa de App Review) — [pula pra explicação ↓](#-caso-2--você-quer-escrever-precisa-deste-repo) |
+| **Só LER** dados | "Quanto gastei essa semana?", "Qual campanha tem o melhor ROAS?", "Mostra meu CTR" | 🟢 **Use Windsor.ai** (5min, sem App Review) — [pula pra explicação ↓](#-caso-1--você-só-quer-ler-dados) |
+| **ESCREVER** mudanças | "Pausa essa campanha", "Aumenta o budget pra R$ 500", "Cria uma campanha nova" | 🔴 **Use este repo** (precisa de App Review) — [pula pra explicação ↓](#-caso-2--você-quer-escrever-precisa-deste-repo) |
 | **Ambos** | Algumas leituras + algumas escritas | 🔴 Use este repo (cobre os 2 casos) |
 
-> **Por que essa diferença existe?** A Meta cobra do seu app uma "moeda" chamada *pontos*. Cada **leitura** custa 1 ponto, cada **escrita** custa 3 pontos. No tier inicial (chamado *Development Access*) você tem só **60 pontos por hora** — esgota em segundos. O **Windsor.ai já passou pelo App Review** deles, então você usa a quota DELES (que é gigante). Mas eles só permitem leitura. Pra escrever, você precisa do SEU próprio app aprovado pela Meta.
+> **Por que Windsor.ai resolve só pra leitura?** Windsor.ai é uma empresa que **já passou pelo App Review da Meta** com o app deles. Quando você conecta sua conta lá, você usa a quota DELES (que é gigante, sem limite prático). Mas eles só liberam leitura. Pra escrever (mudar campanhas), você precisa do SEU próprio app aprovado pela Meta — que é exatamente o que este repo te ajuda a fazer.
 
 ---
 
