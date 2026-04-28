@@ -2,8 +2,11 @@
 
 > Quer falar com o Claude sobre suas campanhas do Facebook/Instagram em linguagem natural? Tipo "pausa essa campanha que tá queimando dinheiro" ou "quanto gastei essa semana?". Este repo te dá o caminho completo.
 
-[![v1.0.1](https://img.shields.io/badge/version-1.0.1-blue)](https://github.com/thaleslaray/meta-ads-claude-starter/releases)
+[![v1.1.0](https://img.shields.io/badge/version-1.1.0-blue)](https://github.com/thaleslaray/meta-ads-claude-starter/releases)
+[![status: beta](https://img.shields.io/badge/status-beta-orange)](https://github.com/thaleslaray/meta-ads-claude-starter/issues)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](./LICENSE)
+
+> ⚠️ **BETA — testado por 1 pessoa (eu).** Passei na primeira tentativa do Meta App Review com este setup, mas você é parte da primeira leva de quem vai clonar isso. Pode ter rough edges em ambientes diferentes (Windows, Apple Intel, Python versions). Se quebrar, [abre issue](https://github.com/thaleslaray/meta-ads-claude-starter/issues/new) que conserto rápido. Use uma **conta Meta de teste** com cap de gasto $0 nos primeiros experimentos antes de apontar pra conta de produção.
 
 ---
 
