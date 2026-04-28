@@ -16,7 +16,7 @@ async def rate_limit_status(ad_account_id: Optional[str] = None) -> str:
     Call this anytime to check if it's safe to make more API calls.
 
     Args:
-        ad_account_id: Ad account to check (e.g. "act_487731909607599").
+        ad_account_id: Ad account to check (e.g. "act_1234567890").
             If not provided, shows app-level usage only.
 
     Returns:

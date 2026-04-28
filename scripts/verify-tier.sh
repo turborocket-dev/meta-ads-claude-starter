@@ -13,7 +13,7 @@
 #   ./verify-tier.sh <account_id> <api_base_url>
 #
 # Example:
-#   ./verify-tier.sh act_487731909607599 https://meta.escoladeautomacao.com.br
+#   ./verify-tier.sh act_XXXXXXXXXX https://your-domain.com
 
 set -euo pipefail
 
