@@ -7,6 +7,37 @@
 
 ---
 
+## 💡 Importante: você JÁ pode usar com 60 pts/h
+
+Antes de qualquer coisa: **o tier gratuito (60 chamadas/hora) NÃO é inútil**. Ele dá pra:
+
+- ~20 leituras de dados por hora (ver campanhas, insights, performance)
+- ~6 escritas por hora (pausar, ativar, mudar budget)
+- Tudo que um humano faria manualmente em ~30 minutos de operação
+
+**Quando você precisa do Standard Access:** quando vai automatizar (rodar coisas em loop) ou quando quer fazer análises pesadas em volume.
+
+### A "barra de quota" que aparece
+
+Quando você usa o Claude Code com este repo, a skill `meta-ads-compliance` carrega automaticamente e **monitora a quota em tempo real**. Se você se aproxima do limite, Claude **avisa**:
+
+```
+⚠️ Quota Meta API: 38/60 pts usados nesta hora (63%)
+   Recomendo pausar polling até reset (~22min).
+```
+
+E se você tentar fazer algo que vai estourar:
+
+```
+⛔ Operação bloqueada: faria você passar de 60 pts/h.
+   Reset em 18 minutos, ou você pode submeter App Review
+   pra ganhar Standard Access (9.000 pts/h, 150x mais).
+```
+
+Ou seja: **você pode começar a usar HOJE mesmo com 60 pts/h**, e só decide submeter App Review quando a quota começa a apertar de verdade.
+
+---
+
 ## ⚠️ ANTES DE COMEÇAR: você precisa MESMO disso?
 
 **90% das pessoas que pensam que precisam deste repo, na verdade não precisam.** Vamos descobrir se você é dos 10%.
@@ -356,6 +387,178 @@ Resposta esperada:
 ```
 
 **Você acabou de ganhar 150x mais quota.** 🚀
+
+---
+
+## 🛠️ Detalhamento: o que cada peça faz
+
+Quando você roda `claude` na pasta deste repo, **4 coisas carregam automaticamente** no Claude. Vou explicar cada uma com clareza.
+
+### 1️⃣ MCP `meta-ads-mcp` — a "ponte" Claude ↔ Meta
+
+**O que é:** MCP (Model Context Protocol) é o jeito que Claude conversa com APIs externas. O `meta-ads-mcp` é a ponte específica entre Claude e a Marketing API da Meta.
+
+**O que faz por baixo dos panos:**
+- Recebe seu pedido em linguagem natural ("lista campanhas ativas")
+- Traduz pra chamada HTTP na Marketing API
+- Assina cada chamada com `appsecret_proof` (assinatura HMAC-SHA256, exigência de segurança da Meta)
+- Aplica rate limiter (não deixa estourar quota)
+- Loga cada chamada num audit log JSONL
+- Devolve a resposta em formato que Claude entende
+
+**O que você vê na prática:**
+
+Você fala:
+> "Lista todas as minhas campanhas ativas com gasto > R$ 100"
+
+Claude (via MCP) faz:
+1. Chama `GET /act_xxx/campaigns?fields=id,name,status,spend`
+2. Filtra status=ACTIVE e spend>100
+3. Te mostra a lista formatada
+
+Você não precisa entender nada de API, código, autenticação. Só fala em português.
+
+**Configuração:** já vem pronta no `.mcp.json`. Lê `META_ACCESS_TOKEN` e `META_APP_SECRET` do seu `.env`. Zero esforço seu.
+
+---
+
+### 2️⃣ Skill `meta-ads-compliance` — o "freio de mão"
+
+**Quando ativa:** **SEMPRE** que você mencionar "meta ads", "campanha", "anúncio" ou qualquer coisa relacionada. Skill auto-detecta o contexto e carrega.
+
+**O que faz:**
+- **Monitora quota** — lê o header `X-Business-Use-Case-Usage` em toda resposta da API e avisa quando chega em 60% de uso
+- **Bloqueia padrões perigosos** — se você pedir algo tipo "faz refresh do dashboard a cada 30 segundos", ela recusa e explica o porquê (= ban-trigger)
+- **Aplica 5 regras anti-ban automaticamente:**
+  1. Polling ≥ 5 minutos (nunca tight loop)
+  2. Writes só em horário comercial (8h-20h)
+  3. HITL obrigatório em criar criativo, +20% budget, cross-account, criar campanha
+  4. Pausar em 60% BUC (a famosa "barra")
+  5. Audit log append-only
+- **Sugere upgrade pra Standard** quando detecta tier dev sufocando o uso
+
+**O que você vê na prática:**
+
+Você fala:
+> "Cria um auto-pause de campanha quando CPA > R$ 50"
+
+Claude responde (com skill ativa):
+> "Vou criar, mas com guard rails:
+> - Cooldown de 6h entre pauses (evita flapping)
+> - Mínimo 10 conversões antes de avaliar
+> - Roda a cada 30min em horário comercial (não madrugada)
+> - Log de cada pause no audit
+>
+> Confirma esses parâmetros antes de eu codar?"
+
+Sem a skill, Claude faria o auto-pause "puro" e você correria risco de ban. Com a skill, vem com cinto de segurança.
+
+**Cobre o ban-wave de 2025-2026** — apps que ignoraram essas regras foram banidos pela Meta nos últimos 6 meses.
+
+---
+
+### 3️⃣ Skill `meta-ads-warmup` — o "aquecedor"
+
+**Quando ativa:** quando você quer aumentar o histórico de uso do app (útil enquanto espera App Review, ou pra mostrar atividade real).
+
+**O que faz:** acumula chamadas legítimas à API (leituras inofensivas) pra "aquecer" o app pros sistemas da Meta. Útil em 2 cenários:
+
+1. **Antes de submeter App Review** — Meta gosta de ver atividade real no app, não app dormente
+2. **Caminho pra Advanced Access** — Advanced exige 1.500+ chamadas em 30 dias com <10% de erro
+
+**O que você vê na prática:**
+
+Você roda:
+```bash
+python scripts/warmup.py --depth standard --save
+```
+
+A skill (carregada quando você menciona warmup):
+- Faz ~50-100 chamadas distribuídas em 30min (não tudo de uma vez)
+- Respeita rate limit (pausa em 60% BUC)
+- Salva log do que rodou em `audit_logs/`
+- Te mostra um relatório:
+  ```
+  ✓ Warmup completo
+  - 73 chamadas feitas (52 reads, 21 writes simulados)
+  - 0 erros
+  - Tier atual: development_access
+  - Próximo passo recomendado: submeter App Review
+  ```
+
+**Quando descartar:** após ganhar Standard Access ou Advanced. Não precisa mais de warmup.
+
+---
+
+### 4️⃣ Skill `meta-app-review-approval` — o "GPS pro App Review"
+
+**Quando ativa:** quando você fala "App Review", "Standard Access", "submeter pro Meta", ou termos similares.
+
+**O que faz:** carrega o workflow completo de aprovação no contexto do Claude. Inclui:
+
+- **Phase 0** — blueprint do dashboard demo (5 features mínimas)
+- **Phase 1** — checklist pré-flight (BM verificado? App Live? Privacy Policy 200?)
+- **Phase 2** — template de descrição em 5 seções (actor, auth, what app does, why standard, compliance)
+- **Phase 3** — guia de gravação de screencast com captions Netflix-style
+- **Phase 4** — preenchimento do form (todos os campos com resposta certa)
+- **Phase 5** — submeter + verificar tier após aprovação
+
+**O que você vê na prática:**
+
+Você fala:
+> "Quero submeter pro Meta App Review pedindo Standard Access"
+
+Claude (com skill ativa) responde:
+> "Beleza. Antes de qualquer coisa, vamos validar 6 pré-requisitos. Me responde:
+>
+> 1. Seu Business Manager está verificado (selo verde)?
+> 2. App está em modo Live (não Development)?
+> 3. App tem Privacy Policy URL configurada?
+> 4. Você tem System User token com permissions ads_management + ads_read?
+> 5. Token assina com appsecret_proof?
+> 6. Dashboard está deployado e respondendo 200 numa URL pública?
+>
+> Se algum for 'não', a Meta rejeita automaticamente sem human review.
+> Vamos validar um a um."
+
+Depois ele te guia: gravar vídeo → captions → preencher form → submeter → esperar email → verificar tier.
+
+**Templates inclusos** (em `examples/`):
+- `descricao-app-review.txt` — colar no campo "Descrição" do form
+- `instrucoes-analista.txt` — colar no campo "Instruções para o analista"
+
+**Auto-suficiente:** mesmo se você usar essa skill em outro projeto sem clonar este repo, ela tem o blueprint completo. Você consegue replicar o processo "from scratch".
+
+---
+
+## 🎬 Resumo visual do fluxo
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│                   Você fala em português                     │
+│              "lista minhas campanhas ativas"                 │
+└──────────────────────────────────────────────────────────────┘
+                              ↓
+┌──────────────────────────────────────────────────────────────┐
+│                   Claude Code (no terminal)                  │
+│  Carrega: CLAUDE.md + .mcp.json + 3 skills                   │
+└──────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────┬───────────────────────┬────────────────┐
+│  Skill compliance   │       MCP             │   Skill review │
+│  • Checa quota      │  • Faz HTTP request   │  • Carrega só  │
+│  • Aplica regras    │  • Assina HMAC        │    quando você │
+│  • Bloqueia perigo  │  • Loga audit         │    pede        │
+│  • Avisa "barra"    │  • Devolve dados      │                │
+└─────────────────────┴───────────────────────┴────────────────┘
+                              ↓
+┌──────────────────────────────────────────────────────────────┐
+│              Meta Marketing API (oficial)                    │
+└──────────────────────────────────────────────────────────────┘
+                              ↓
+                    Resposta volta pra você
+                em linguagem natural, formatada
+```
 
 ---
 
