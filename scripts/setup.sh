@@ -34,8 +34,12 @@ echo "  2. App Secret: developers.facebook.com → seu app → Settings → Basi
 echo "     → App Secret → Show"
 echo ""
 
-read -r -p "META_ACCESS_TOKEN (System User token, começa com EAA...): " META_ACCESS_TOKEN
-read -r -p "META_APP_SECRET (32 caracteres): " META_APP_SECRET
+echo "  (tokens são lidos sem ecoar no terminal pra não vazar no bash history)"
+echo ""
+read -r -s -p "META_ACCESS_TOKEN (System User token, começa com EAA...): " META_ACCESS_TOKEN
+echo ""
+read -r -s -p "META_APP_SECRET (32 caracteres): " META_APP_SECRET
+echo ""
 read -r -p "ORG_NAME (nome da sua empresa, aparece no dashboard se você fizer App Review): " ORG_NAME
 
 # Write .env (no trailing newlines on values)

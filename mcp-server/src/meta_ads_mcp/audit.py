@@ -201,14 +201,24 @@ class AuditLog:
         return entries[-limit:]
 
     def get_write_count_today(self) -> int:
-        """Count write operations logged today."""
+        """Count write operations logged today.
+
+        Filters by `kind == "write"` so that read-heavy workloads don't
+        inflate the counter and falsely trigger write rate-limit guards.
+        """
         if not self._log_file.exists():
             return 0
         count = 0
         with open(self._log_file) as f:
             for line in f:
-                if line.strip():
-                    count += 1
+                if not line.strip():
+                    continue
+                try:
+                    entry = json.loads(line)
+                    if entry.get("kind") == "write":
+                        count += 1
+                except json.JSONDecodeError:
+                    continue
         return count
 
 

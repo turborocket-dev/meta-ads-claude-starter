@@ -244,7 +244,7 @@ Anote esses 3 valores:
 - [ ] **Node.js 20+** — testa: `node --version` (se não tem, baixa em https://nodejs.org)
 - [ ] **Python 3.11+** — testa: `python3 --version` (Mac já vem, Windows baixa em https://python.org)
 - [ ] **Git** — testa: `git --version`
-- [ ] **Claude Code** — testa: `claude --version` (instala em https://docs.anthropic.com/claude-code)
+- [ ] **Claude Code ≥ 2.0.65** — testa: `claude --version`. Versões antigas têm CVE-2025-59536 (RCE via project files) e CVE-2026-21852 (API key exfil). Atualiza em https://docs.anthropic.com/claude-code
 - [ ] **Conta Vercel** (gratuita) + CLI: `npm install -g vercel`
 
 ---

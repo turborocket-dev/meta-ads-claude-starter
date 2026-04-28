@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "meta-ads-mcp-codemode"
-version = "0.1.0"
+version = "1.0.0"
 description = "Meta Marketing API MCP server with FastMCP Code Mode — auto-generated from Meta's official SDK specs"
 readme = "README.md"
 license = "MIT"
@@ -12,18 +12,19 @@ requires-python = ">=3.10"
 authors = [{ name = "Thales Laray" }]
 keywords = ["meta-ads", "facebook-ads", "mcp", "fastmcp", "code-mode", "marketing-api"]
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 4 - Beta",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
 ]
 dependencies = [
-    "fastapi>=0.136.1",
-    "fastmcp[code-mode]>=3.1.0",
+    # CVE-2026-32871 patched in 3.2.0; pin >=3.2.4 for defense-in-depth
+    "fastmcp[code-mode]>=3.2.4",
     "httpx>=0.28.0",
+    # Used by apps/instagram_dashboard.py
     "prefab-ui>=0.10.0",
-    "streamlit>=1.56.0",
-    "uvicorn>=0.41.0",
 ]
+# Note: streamlit removed (was not used by any tool).
+# fastapi/uvicorn moved to dashboard's own requirements.txt.
 
 [project.scripts]
 meta-ads-mcp = "meta_ads_mcp.server:main"
