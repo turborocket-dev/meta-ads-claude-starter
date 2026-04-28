@@ -7,6 +7,49 @@
 
 ---
 
+## 🔥 Por que este repo existe (a história)
+
+**Em 2025-2026, uma onda de banimentos da Meta varreu a comunidade.** Pessoas que tentaram conectar AI agents (Claude, Cursor, OpenAI) nas suas contas de Meta Ads pra automatizar gestão **perderam contas inteiras**. Histórico de campanhas, audiências treinadas, pixel data, tudo apagado.
+
+O caso mais famoso viralizou no Reddit: ["Claude Code got my Meta ads account permanently banned"](https://www.reddit.com/r/FacebookAds/comments/1sbsw6c/claude_code_got_my_meta_ads_account_permanently/). Um anunciante conectou Claude Code direto na Marketing API pra deixar o agente otimizando campanhas 24/7. Funcionou por 1 semana. Depois Meta baniu permanentemente.
+
+### Por que isso aconteceu
+
+Eu (Thales) pesquisei o caso a fundo (relatório completo em `docs/pesquisa-ban-risco.md`) e confirmei: **a Meta NÃO bane por usar AI**. Eles banem por **3 padrões específicos** que o caso viralizado fazia:
+
+1. **Token mal configurado** — usar token de browser/sessão em vez de System User token assinado
+2. **Tight polling** — fazer queries em loop apertado (cada poucos segundos), parecendo bot/scraper
+3. **Mudanças sem revisão humana** — auto-publicar criativos, mudar budget às 3am, alterações em alta velocidade fora de horário comercial
+
+A confirmação veio direto de um representante da Meta pra agência **Zentric Digital** (5 contas, 1.279 operações/mês, 18 meses zero bans):
+
+> "A Meta não bane contas por usar AI. Bane contas cujo código viola rate limits, ignora sinais de integridade, ou quebra políticas de anúncios."
+
+### O que este repo garante
+
+Tudo neste repo foi desenhado pra **falhar em ZERO** dos 3 triggers de ban:
+
+- ✅ **System User token** (não browser session) + assinatura `appsecret_proof` em toda chamada
+- ✅ **Rate limiter integrado** que pausa polling em 60% da quota (você nunca chega perto do limite)
+- ✅ **HITL (Human-In-The-Loop)** obrigatório pra mudanças sensíveis (criar criativo, +20% budget, etc.)
+- ✅ **Audit log** append-only de toda chamada (se Meta perguntar, você prova uso legítimo)
+- ✅ **Skill `meta-ads-compliance`** que aplica as 5 regras anti-ban automaticamente em cada conversa
+
+**Resultado:** você pode rodar Claude Code conectado às suas contas de Meta Ads **com tranquilidade**, sabendo que tem cinto de segurança. Mesmo se você tentar pedir algo perigoso, o Claude (com a skill ativa) recusa e explica o porquê.
+
+### Pra quem fez sentido criar isso
+
+Eu administro 3 contas próprias da Escola de Automação que movem dezenas de milhares de reais/mês em Meta Ads. Eu queria usar Claude pra automatizar gestão sem virar mais um caso de banimento. Não achei nenhum boilerplate que cobrisse o problema completo (do setup até o App Review). Então construí.
+
+Decidi liberar público porque:
+1. **Toda pessoa que usa Claude com Meta Ads precisa disso** — sem isso, o risco é real
+2. **A documentação da Meta é confusa** — leva semanas pra montar tudo do zero
+3. **Mentorados meus precisavam** — em vez de explicar pra cada um, deixei aberto
+
+Se este repo te economiza dor de cabeça (ou previne um banimento), ⭐ no GitHub me ajuda a saber se valeu a pena.
+
+---
+
 ## 📖 Primeiro: do que estamos falando?
 
 Se você nunca mexeu com automação de Meta Ads, leia esta seção primeiro. Vou explicar do absoluto zero, sem jargão.
